@@ -8,38 +8,102 @@
     d:DesignWidth="800"
     SizeChanged="UserControl_SizeChanged"
     mc:Ignorable="d">
-    <Canvas
-        x:Name="MainCanvas"
-        Background="Transparent"
-        ClipToBounds="True"
-        MouseLeftButtonDown="MainCanvas_MouseLeftButtonDown"
-        MouseLeftButtonUp="MainCanvas_MouseLeftButtonUp"
-        MouseMove="MainCanvas_MouseMove"
-        MouseWheel="MainCanvas_MouseWheel"
-        PreviewMouseMove="MainCanvas_PreviewMouseMove"
-        PreviewMouseWheel="MainCanvas_PreviewMouseWheel">
-        <Image
-            x:Name="Image"
-            RenderOptions.BitmapScalingMode="HighQuality"
-            Stretch="None">
-            <Image.RenderTransform>
-                <TransformGroup>
-                    <TranslateTransform x:Name="Translate" X="0" Y="0" />
-                    <ScaleTransform x:Name="Scale" ScaleX="1" ScaleY="1" />
-                </TransformGroup>
-            </Image.RenderTransform>
-        </Image>
+    <Grid>
+        <Canvas
+            x:Name="MainCanvas"
+            Background="Transparent"
+            ClipToBounds="True"
+            MouseLeftButtonDown="MainCanvas_MouseLeftButtonDown"
+            MouseLeftButtonUp="MainCanvas_MouseLeftButtonUp"
+            MouseMove="MainCanvas_MouseMove"
+            MouseWheel="MainCanvas_MouseWheel"
+            PreviewMouseMove="MainCanvas_PreviewMouseMove"
+            PreviewMouseWheel="MainCanvas_PreviewMouseWheel">
+            <Image
+                x:Name="Image"
+                RenderOptions.BitmapScalingMode="HighQuality"
+                Stretch="None">
+                <Image.RenderTransform>
+                    <TransformGroup>
+                        <TranslateTransform x:Name="Translate" X="0" Y="0" />
+                        <ScaleTransform x:Name="Scale" ScaleX="1" ScaleY="1" />
+                    </TransformGroup>
+                </Image.RenderTransform>
+            </Image>
+            <Rectangle
+                x:Name="HideBorder"
+                Width="{Binding ElementName=Image, Path=ActualWidth}"
+                Height="{Binding ElementName=Image, Path=ActualHeight}"
+                Fill="Transparent">
+                <Rectangle.RenderTransform>
+                    <TransformGroup>
+                        <TranslateTransform x:Name="TranslateBorder" X="0" Y="0" />
+                        <ScaleTransform x:Name="ScaleBorder" ScaleX="1" ScaleY="1" />
+                        <!--<TranslateTransform x:Name="TranslateBorder" X="{Binding ElementName=Translate, Path=X,Mode=OneWay}" Y="{Binding ElementName=Translate, Path=Y,Mode=OneWay}" />
+                        <ScaleTransform x:Name="ScaleBorder" ScaleX="{Binding ElementName=Scale, Path=ScaleX,Mode=OneWay}" ScaleY="{Binding ElementName=Scale, Path=ScaleY,Mode=OneWay}" />-->
+                    </TransformGroup>
+                </Rectangle.RenderTransform>
+            </Rectangle>
+        </Canvas>
         <Rectangle
-            x:Name="HideBorder"
-            Width="{Binding ElementName=Image, Path=ActualWidth}"
-            Height="{Binding ElementName=Image, Path=ActualHeight}"
-            Fill="Transparent">
+            x:Name="RecLeft"
+            Width="70"
+            HorizontalAlignment="Left"
+            RenderTransformOrigin="0,0.5">
             <Rectangle.RenderTransform>
-                <TransformGroup>
-                    <TranslateTransform x:Name="TranslateBorder" X="0" Y="0" />
-                    <ScaleTransform x:Name="ScaleBorder" ScaleX="1" ScaleY="1" />
-                </TransformGroup>
+                <ScaleTransform x:Name="RecLeftScale" ScaleX="0" />
             </Rectangle.RenderTransform>
+            <Rectangle.Fill>
+                <RadialGradientBrush Center="0,0.5" GradientOrigin="0,0.5">
+                    <GradientStop Offset="1" Color="#00D5D1F0" />
+                    <GradientStop Offset="0" Color="#A0D5D1F0" />
+                </RadialGradientBrush>
+            </Rectangle.Fill>
         </Rectangle>
-    </Canvas>
+        <Rectangle
+            x:Name="RecUp"
+            Height="70"
+            VerticalAlignment="Top"
+            RenderTransformOrigin="0.5,0">
+            <Rectangle.RenderTransform>
+                <ScaleTransform x:Name="RecUpScale" ScaleY="0" />
+            </Rectangle.RenderTransform>
+            <Rectangle.Fill>
+                <RadialGradientBrush Center="0.5,0" GradientOrigin="0.5,0">
+                    <GradientStop Offset="1" Color="#00D5D1F0" />
+                    <GradientStop Offset="0" Color="#A0D5D1F0" />
+                </RadialGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+        <Rectangle
+            x:Name="RecRight"
+            Width="70"
+            HorizontalAlignment="Right"
+            RenderTransformOrigin="1,0.5">
+            <Rectangle.RenderTransform>
+                <ScaleTransform x:Name="RecRightScale" ScaleX="0" />
+            </Rectangle.RenderTransform>
+            <Rectangle.Fill>
+                <RadialGradientBrush Center="1,0.5" GradientOrigin="1,0.5">
+                    <GradientStop Offset="1" Color="#00D5D1F0" />
+                    <GradientStop Offset="0" Color="#A0D5D1F0" />
+                </RadialGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+        <Rectangle
+            x:Name="RecBottom"
+            Height="70"
+            VerticalAlignment="Bottom"
+            RenderTransformOrigin="0.5,1">
+            <Rectangle.RenderTransform>
+                <ScaleTransform x:Name="RecBottomScale" ScaleY="0" />
+            </Rectangle.RenderTransform>
+            <Rectangle.Fill>
+                <RadialGradientBrush Center="0.5,1" GradientOrigin="0.5,1">
+                    <GradientStop Offset="1" Color="#00D5D1F0" />
+                    <GradientStop Offset="0" Color="#A0D5D1F0" />
+                </RadialGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+    </Grid>
 </UserControl>

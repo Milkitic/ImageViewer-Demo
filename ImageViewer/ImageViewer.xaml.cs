@@ -17,15 +17,34 @@ namespace ImageViewerDemo
     public partial class ImageViewer : UserControl
     {
         public delegate void ScaleChangedHandler(double ratio);
-
         public event ScaleChangedHandler ScaleChanged;
+
+        public ImageSource ImageSource
+        {
+            get => (ImageSource)GetValue(ImageSourceProperty);
+            set => SetValue(ImageSourceProperty, value);
+        }
+
+        public static readonly DependencyProperty ImageSourceProperty =
+            DependencyProperty.Register("ImageSource",
+                typeof(ImageSource),
+                typeof(ImageViewer),
+                new PropertyMetadata(null, ImageSourceChanged));
+
+        private static void ImageSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ImageViewer viewer && e.NewValue is ImageSource image)
+                viewer.LoadImage(image);
+        }
+
         private static readonly CircleEase CircleEaseOut = new CircleEase { EasingMode = EasingMode.EaseOut };
+
+        private readonly HashSet<Rectangle> _boundSbList = new HashSet<Rectangle>();
 
         private double _previousScaleIndex = 0;
         private double _previewScaleRatio = 0;
-        private HashSet<Rectangle> _boundSbList = new HashSet<Rectangle>();
-
-        private double ImgRatio => SourceSizePrivate.Width / SourceSizePrivate.Height;
+        
+        private double ImgRatio => SourceSize.Width / SourceSize.Height;
         private double CanvasRatio => ActualWidth / ActualHeight;
         private double FullScaleRatio { get; set; }
         private bool AutoFitLargeSize { get; } = true;
@@ -36,7 +55,7 @@ namespace ImageViewerDemo
             InitializeComponent();
         }
 
-        public Size SourceSizePrivate { get; private set; }
+        public Size SourceSize { get; private set; }
         public double MinScale { get; set; } = 1;
         public double MaxScale { get; set; } = 5;
         public double ScaleCount { get; set; } = 12;
@@ -54,6 +73,15 @@ namespace ImageViewerDemo
             }
         }
 
+        public void LoadImage(ImageSource image)
+        {
+            SourceSize = image == null ? new Size(0, 0) : new Size(image.Width, image.Height);
+            FixFullRatio();
+            ResetPosition();
+            Image.Source = image;
+            _boundSbList.Clear();
+        }
+
         public void LoadImage(string path)
         {
             var bitmap = new BitmapImage();
@@ -67,10 +95,7 @@ namespace ImageViewerDemo
                 bitmap.Freeze();
             }
 
-            SourceSizePrivate = new Size(bitmap.Width, bitmap.Height);
-            FixFullRatio();
-            ResetPosition();
-            Image.Source = bitmap;
+            LoadImage(bitmap);
         }
 
         private double GetNextScaleRatio(bool add)
@@ -97,8 +122,6 @@ namespace ImageViewerDemo
                     e.Handled = true;
                     return;
                 }
-
-                //Scale.ScaleY += delta;
             }
             else
             {
@@ -145,12 +168,6 @@ namespace ImageViewerDemo
             canvas.CaptureMouse();
             canvas.Cursor = Cursors.SizeAll;
             _mouseDown = true;
-        }
-
-
-        private void MainCanvas_PreviewMouseMove(object sender, MouseEventArgs e)
-        {
-            //_prevImageRel = Mouse.GetPosition(Image);
         }
 
         private void MainCanvas_MouseMove(object sender, MouseEventArgs e)
@@ -217,11 +234,11 @@ namespace ImageViewerDemo
         {
             if (ImgRatio >= CanvasRatio)
             {
-                FullScaleRatio = SourceSizePrivate.Width / ActualWidth;
+                FullScaleRatio = SourceSize.Width / ActualWidth;
             }
             else if (ImgRatio < CanvasRatio)
             {
-                FullScaleRatio = SourceSizePrivate.Height / ActualHeight;
+                FullScaleRatio = SourceSize.Height / ActualHeight;
             }
         }
 
@@ -239,7 +256,6 @@ namespace ImageViewerDemo
                 {
                     To = value,
                     EasingFunction = CircleEaseOut,
-                    //EasingFunction = new CubicEase(){EasingMode = EasingMode.EaseOut},
                     BeginTime = TimeSpan.Zero,
                     Duration = new Duration(AnimationTime)
                 };
@@ -270,7 +286,7 @@ namespace ImageViewerDemo
         {
             if (AnimationTime == TimeSpan.Zero) animation = false;
             bool recLeft = false, recRight = false, recUp = false, recBottom = false;
-            if (CurrentScale * SourceSizePrivate.Width >= ActualWidth)
+            if (CurrentScale * SourceSize.Width >= ActualWidth)
             {
                 if (x >= 0)
                 {
@@ -281,9 +297,9 @@ namespace ImageViewerDemo
                         ShowBound(RecLeft);
                     }
                 }
-                else if ((x + SourceSizePrivate.Width) * CurrentScale <= ActualWidth)
+                else if ((x + SourceSize.Width) * CurrentScale <= ActualWidth)
                 {
-                    x = ActualWidth / CurrentScale - SourceSizePrivate.Width;
+                    x = ActualWidth / CurrentScale - SourceSize.Width;
                     if (_mouseDown)
                     {
                         recRight = true;
@@ -293,11 +309,11 @@ namespace ImageViewerDemo
             }
             else
             {
-                var display = SourceSizePrivate.Width * CurrentScale;
+                var display = SourceSize.Width * CurrentScale;
                 x = (ActualWidth - display) / (2 * CurrentScale);
             }
 
-            if (CurrentScale * SourceSizePrivate.Height >= ActualHeight)
+            if (CurrentScale * SourceSize.Height >= ActualHeight)
             {
                 if (y >= 0)
                 {
@@ -308,9 +324,9 @@ namespace ImageViewerDemo
                         ShowBound(RecUp);
                     }
                 }
-                else if ((y + SourceSizePrivate.Height) * CurrentScale <= ActualHeight)
+                else if ((y + SourceSize.Height) * CurrentScale <= ActualHeight)
                 {
-                    y = ActualHeight / CurrentScale - SourceSizePrivate.Height;
+                    y = ActualHeight / CurrentScale - SourceSize.Height;
                     if (_mouseDown)
                     {
                         recBottom = true;
@@ -320,7 +336,7 @@ namespace ImageViewerDemo
             }
             else
             {
-                var display = SourceSizePrivate.Height * CurrentScale;
+                var display = SourceSize.Height * CurrentScale;
                 y = (ActualHeight - display) / (2 * CurrentScale);
             }
 
@@ -446,6 +462,7 @@ namespace ImageViewerDemo
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
             Storyboard.SetTargetProperty(mx, new PropertyPath("RenderTransform.Scale" + path));
             Storyboard.SetTarget(mx, rec);
             sb.Children.Add(mx);

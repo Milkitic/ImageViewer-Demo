@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -122,14 +123,31 @@ namespace ImageViewerDemo
         private double CanvasRatio => ActualWidth / ActualHeight;
         private double FullScaleRatio { get; set; }
         private bool AutoFitLargeSize { get; } = true;
+        private bool AutoFitSmallSize { get; } = true;
 
         #endregion
 
         public void LoadImage(ImageSource image)
         {
-            SourceSize = image == null ? new Size() : new Size(image.Width, image.Height);
+            double width = 0, height = 0;
+            if (image is BitmapSource bmp)
+            {
+                width = bmp.PixelWidth;
+                height = bmp.PixelHeight;
+            }
+            else if (!(image is null))
+            {
+                width = image.Width;
+                height = image.Height;
+            }
+
+            RunSourceWidth.Text = width.ToString(CultureInfo.InvariantCulture);
+            RunSourceHeight.Text = height.ToString(CultureInfo.InvariantCulture);
+            SourceSize = new Size(width, height);
             FixFullRatio();
-            ResetPosition();
+            ResetPosition(true);
+            Image.Width = width;
+            Image.Height = height;
             Image.Source = image;
             _boundSbList.Clear();
         }
@@ -191,7 +209,8 @@ namespace ImageViewerDemo
             else if (scaleIndex < 0) scaleIndex = 0;
 
             var trueMin = Math.Min(1 / FullScaleRatio, MinScale);
-            var scaleRatio = trueMin + (MaxScale - trueMin) * QuadIn(scaleIndex / (double)ScaleCount);
+            var scaleRatio = trueMin + (MaxScale - trueMin) * MathEx.QuadIn(scaleIndex / (double)ScaleCount);
+            Log.Debug(scaleRatio.ToString());
             return scaleRatio;
         }
 
@@ -213,12 +232,12 @@ namespace ImageViewerDemo
                 var finalScale = _previewScaleRatio;
                 if (FullScaleRatio <= 1 && finalScale < MinScale)
                 {
-                    ResetPosition(true);
+                    ResetPosition(false, true);
                     e.Handled = true;
                 }
                 else if (FullScaleRatio > 1 && finalScale < MinScale / FullScaleRatio)
                 {
-                    ResetPosition(true);
+                    ResetPosition(false, true);
                     e.Handled = true;
                 }
             }
@@ -301,25 +320,43 @@ namespace ImageViewerDemo
         private void UserControl_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             FixFullRatio();
-            ResetPosition();
+            ResetPosition(false);
         }
 
-        private void ResetPosition(bool animation = false)
+        private void ResetPosition(bool initial, bool animation = false)
         {
-            if (AutoFitLargeSize)
+            if (initial)
             {
-                if (FullScaleRatio < 1)
+                if (FullScaleRatio < 1 && AutoFitSmallSize)
                 {
-                    SetScale(1, animation);
+                    SetScale(1 / FullScaleRatio, animation);
+                }
+                else if (FullScaleRatio > 1 && AutoFitLargeSize)
+                {
+                    SetScale(1 / FullScaleRatio, animation);
                 }
                 else
                 {
-                    SetScale(1 / FullScaleRatio, animation);
+                    SetScale(1, animation);
                 }
             }
             else
             {
-                SetScale(1, animation);
+                if (AutoFitLargeSize)
+                {
+                    if (FullScaleRatio < 1)
+                    {
+                        SetScale(1, animation);
+                    }
+                    else
+                    {
+                        SetScale(1 / FullScaleRatio, animation);
+                    }
+                }
+                else
+                {
+                    SetScale(1, animation);
+                }
             }
 
             SetTranslate(0, 0, animation);
@@ -345,6 +382,9 @@ namespace ImageViewerDemo
 
             var sb = new Storyboard();
             _currentScale = value;
+            RenderOptions.SetBitmapScalingMode(Image,
+                value == 1 ? BitmapScalingMode.NearestNeighbor : BitmapScalingMode.HighQuality);
+
             if (animation)
             {
                 var sx = new DoubleAnimation
